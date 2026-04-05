@@ -1,0 +1,944 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeepGuard - AI-Powered Deepfake Detection</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --bg-dark: #0f172a;
+            --bg-medium: #1e293b;
+            --bg-light: #334155;
+            --text-primary: #f1f5f9;
+            --text-secondary: #cbd5e1;
+            --border: #475569;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, var(--bg-dark) 0%, #1a1f3a 100%);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            padding: 3rem 0;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            border-radius: 1rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 20px 60px rgba(99, 102, 241, 0.3);
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, #fff 0%, #e0e7ff 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header .subtitle {
+            font-size: 1.2rem;
+            color: rgba(255, 255, 255, 0.9);
+            font-weight: 300;
+        }
+
+        .header .tagline {
+            margin-top: 1rem;
+            font-size: 0.95rem;
+            color: rgba(255, 255, 255, 0.7);
+            font-style: italic;
+        }
+
+        /* RAI Principles Badge */
+        .rai-badges {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .rai-badge {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 0.5rem 1rem;
+            border-radius: 2rem;
+            font-size: 0.85rem;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .rai-badge:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        /* Main Grid */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        @media (max-width: 1024px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Card Styling */
+        .card {
+            background: var(--bg-medium);
+            border-radius: 1rem;
+            padding: 2rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .card-icon {
+            font-size: 2rem;
+        }
+
+        .card-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        /* Upload Section */
+        .upload-zone {
+            border: 3px dashed var(--border);
+            border-radius: 1rem;
+            padding: 3rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: var(--bg-light);
+        }
+
+        .upload-zone:hover {
+            border-color: var(--primary);
+            background: rgba(99, 102, 241, 0.1);
+        }
+
+        .upload-zone.dragover {
+            border-color: var(--success);
+            background: rgba(16, 185, 129, 0.1);
+        }
+
+        .upload-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.7;
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 1rem;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-analyze {
+            width: 100%;
+            padding: 1.25rem;
+            font-size: 1.1rem;
+            margin-top: 1.5rem;
+        }
+
+        /* File Preview */
+        .file-preview {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background: var(--bg-dark);
+            border-radius: 0.5rem;
+            display: none;
+        }
+
+        .file-preview.active {
+            display: block;
+        }
+
+        .preview-image {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        /* Agent Timeline */
+        .agent-timeline {
+            position: relative;
+            padding-left: 2rem;
+        }
+
+        .timeline-item {
+            position: relative;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            background: var(--bg-light);
+            border-radius: 0.75rem;
+            border-left: 4px solid var(--border);
+            opacity: 0;
+            transform: translateX(-20px);
+            animation: slideIn 0.5s ease forwards;
+        }
+
+        .timeline-item.active {
+            border-left-color: var(--primary);
+            box-shadow: 0 0 20px rgba(99, 102, 241, 0.3);
+        }
+
+        .timeline-item.complete {
+            border-left-color: var(--success);
+        }
+
+        @keyframes slideIn {
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .agent-name {
+            font-weight: 700;
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .agent-status {
+            padding: 0.25rem 0.75rem;
+            border-radius: 1rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .status-pending {
+            background: rgba(251, 191, 36, 0.2);
+            color: var(--warning);
+        }
+
+        .status-running {
+            background: rgba(99, 102, 241, 0.2);
+            color: var(--primary);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        .status-complete {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--success);
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        .agent-details {
+            margin-top: 1rem;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .confidence-bar {
+            margin-top: 0.75rem;
+            background: var(--bg-dark);
+            height: 8px;
+            border-radius: 1rem;
+            overflow: hidden;
+        }
+
+        .confidence-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--success) 0%, var(--primary) 100%);
+            transition: width 0.5s ease;
+        }
+
+        /* Results Section */
+        .results-section {
+            display: none;
+            margin-top: 2rem;
+        }
+
+        .results-section.active {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .verdict-card {
+            background: linear-gradient(135deg, var(--bg-medium) 0%, var(--bg-light) 100%);
+            padding: 2rem;
+            border-radius: 1rem;
+            text-align: center;
+            margin-bottom: 2rem;
+            border: 2px solid var(--border);
+        }
+
+        .verdict-icon {
+            font-size: 5rem;
+            margin-bottom: 1rem;
+        }
+
+        .verdict-text {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .verdict-authentic {
+            color: var(--success);
+        }
+
+        .verdict-deepfake {
+            color: var(--danger);
+        }
+
+        .verdict-suspicious {
+            color: var(--warning);
+        }
+
+        .verdict-review {
+            color: var(--primary);
+        }
+
+        .confidence-score {
+            font-size: 3rem;
+            font-weight: 800;
+            margin-top: 1rem;
+        }
+
+        /* Metrics Grid */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .metric-card {
+            background: var(--bg-light);
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            border-left: 4px solid var(--primary);
+        }
+
+        .metric-label {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+        }
+
+        .metric-value {
+            font-size: 1.75rem;
+            font-weight: 700;
+        }
+
+        /* Alerts */
+        .alerts-section {
+            margin: 2rem 0;
+        }
+
+        .alert {
+            padding: 1rem 1.5rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+            border-left: 4px solid;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .alert-info {
+            background: rgba(99, 102, 241, 0.1);
+            border-color: var(--primary);
+        }
+
+        .alert-warning {
+            background: rgba(245, 158, 11, 0.1);
+            border-color: var(--warning);
+        }
+
+        .alert-danger {
+            background: rgba(239, 68, 68, 0.1);
+            border-color: var(--danger);
+        }
+
+        .alert-success {
+            background: rgba(16, 185, 129, 0.1);
+            border-color: var(--success);
+        }
+
+        /* Loading Spinner */
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            border-top: 4px solid var(--primary);
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 2rem auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Explanations */
+        .explanation-section {
+            margin: 2rem 0;
+        }
+
+        .explanation-card {
+            background: var(--bg-light);
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .explanation-method {
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .feature-importance {
+            margin-top: 1rem;
+        }
+
+        .feature-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .feature-bar {
+            flex: 1;
+            margin: 0 1rem;
+            height: 8px;
+            background: var(--bg-dark);
+            border-radius: 1rem;
+            overflow: hidden;
+        }
+
+        .feature-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary) 0%, var(--success) 100%);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🛡️ DeepGuard</h1>
+            <div class="subtitle">Multi-Agentic Deepfake Detection System</div>
+            <div class="tagline">"Restoring Trust in Authentic Media through Responsible AI"</div>
+            
+            <div class="rai-badges">
+                <div class="rai-badge">⚖️ Fairness</div>
+                <div class="rai-badge">📊 Accountability</div>
+                <div class="rai-badge">🔍 Transparency</div>
+                <div class="rai-badge">🔒 Privacy</div>
+                <div class="rai-badge">💪 Robustness</div>
+                <div class="rai-badge">🤝 Non-Maleficence</div>
+            </div>
+        </div>
+
+        <!-- Main Grid -->
+        <div class="main-grid">
+            <!-- Upload Section -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon">📤</div>
+                    <div class="card-title">Upload Media</div>
+                </div>
+
+                <div class="upload-zone" id="uploadZone">
+                    <div class="upload-icon">🎬</div>
+                    <h3>Drop media file here or click to browse</h3>
+                    <p style="margin-top: 1rem; color: var(--text-secondary);">
+                        Supported: Images (JPG, PNG), Videos (MP4, AVI), Audio (MP3, WAV)
+                    </p>
+                    <input type="file" id="fileInput" accept="image/*,video/*,audio/*">
+                </div>
+
+                <div class="file-preview" id="filePreview">
+                    <h4>Selected File:</h4>
+                    <p id="fileName"></p>
+                    <p id="fileSize"></p>
+                    <img id="previewImage" class="preview-image" style="display: none;">
+                    
+                    <button class="btn btn-analyze" id="analyzeBtn" disabled>
+                        🔬 Analyze for Deepfakes
+                    </button>
+                </div>
+            </div>
+
+            <!-- Agent Timeline -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon">🤖</div>
+                    <div class="card-title">Agent Activity Timeline</div>
+                </div>
+
+                <div class="agent-timeline" id="agentTimeline">
+                    <div style="text-align: center; padding: 3rem; color: var(--text-secondary);">
+                        Upload media to begin analysis
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Section -->
+        <div class="results-section" id="resultsSection">
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon">📋</div>
+                    <div class="card-title">Detection Results</div>
+                </div>
+
+                <!-- Verdict -->
+                <div class="verdict-card" id="verdictCard">
+                    <div class="verdict-icon" id="verdictIcon">⏳</div>
+                    <div class="verdict-text" id="verdictText">Analyzing...</div>
+                    <div class="confidence-score" id="confidenceScore">--</div>
+                    <div style="color: var(--text-secondary); margin-top: 0.5rem;">Confidence Score</div>
+                </div>
+
+                <!-- Metrics -->
+                <div class="metrics-grid" id="metricsGrid"></div>
+
+                <!-- Alerts -->
+                <div class="alerts-section" id="alertsSection"></div>
+
+                <!-- Explanations -->
+                <div class="explanation-section" id="explanationSection"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global state
+        let uploadedFile = null;
+        let mediaId = null;
+        let mediaType = null;
+
+        // DOM elements
+        const uploadZone = document.getElementById('uploadZone');
+        const fileInput = document.getElementById('fileInput');
+        const filePreview = document.getElementById('filePreview');
+        const fileName = document.getElementById('fileName');
+        const fileSize = document.getElementById('fileSize');
+        const previewImage = document.getElementById('previewImage');
+        const analyzeBtn = document.getElementById('analyzeBtn');
+        const agentTimeline = document.getElementById('agentTimeline');
+        const resultsSection = document.getElementById('resultsSection');
+
+        // Upload zone click handler
+        uploadZone.addEventListener('click', () => fileInput.click());
+
+        // Drag and drop handlers
+        uploadZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadZone.classList.add('dragover');
+        });
+
+        uploadZone.addEventListener('dragleave', () => {
+            uploadZone.classList.remove('dragover');
+        });
+
+        uploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadZone.classList.remove('dragover');
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFileSelect(files[0]);
+            }
+        });
+
+        // File input change handler
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFileSelect(e.target.files[0]);
+            }
+        });
+
+        // Handle file selection
+        function handleFileSelect(file) {
+            uploadedFile = file;
+            
+            fileName.textContent = file.name;
+            fileSize.textContent = `Size: ${(file.size / 1024 / 1024).toFixed(2)} MB`;
+            
+            // Show preview for images
+            if (file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    previewImage.src = e.target.result;
+                    previewImage.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            } else {
+                previewImage.style.display = 'none';
+            }
+            
+            filePreview.classList.add('active');
+            
+            // Upload file immediately
+            uploadFile();
+        }
+
+        // Upload file to server
+        async function uploadFile() {
+            analyzeBtn.disabled = true;
+            analyzeBtn.textContent = '⏳ Uploading...';
+            
+            const formData = new FormData();
+            formData.append('file', uploadedFile);
+            
+            try {
+                const response = await fetch('http://localhost:8000/api/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    mediaId = result.media_id;
+                    mediaType = result.media_type;
+                    
+                    analyzeBtn.disabled = false;
+                    analyzeBtn.textContent = '🔬 Analyze for Deepfakes';
+                    
+                    // Show success message
+                    showAlert('success', '✅ File uploaded successfully! Ready for analysis.');
+                } else {
+                    throw new Error('Upload failed');
+                }
+            } catch (error) {
+                console.error('Upload error:', error);
+                showAlert('danger', '❌ Upload failed. Please try again.');
+                analyzeBtn.textContent = '🔬 Analyze for Deepfakes';
+            }
+        }
+
+        // Analyze button handler
+        analyzeBtn.addEventListener('click', startAnalysis);
+
+        // Start deepfake analysis
+        async function startAnalysis() {
+            if (!mediaId || !mediaType) {
+                showAlert('warning', '⚠️ Please upload a file first.');
+                return;
+            }
+            
+            analyzeBtn.disabled = true;
+            analyzeBtn.textContent = '⏳ Analyzing...';
+            
+            // Clear previous results
+            agentTimeline.innerHTML = '';
+            resultsSection.classList.remove('active');
+            
+            // Initialize agent timeline
+            initializeAgentTimeline();
+            
+            try {
+                const response = await fetch('http://localhost:8000/api/analyze', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        media_id: mediaId,
+                        media_type: mediaType
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    displayResults(result.results);
+                } else {
+                    throw new Error('Analysis failed');
+                }
+            } catch (error) {
+                console.error('Analysis error:', error);
+                showAlert('danger', '❌ Analysis failed. Please try again.');
+            } finally {
+                analyzeBtn.disabled = false;
+                analyzeBtn.textContent = '🔬 Analyze for Deepfakes';
+            }
+        }
+
+        // Initialize agent timeline
+        function initializeAgentTimeline() {
+            const agents = [
+                { name: 'Orchestrator Agent', icon: '🎯', description: 'Coordinating workflow' },
+                { name: 'Visual Forensics Agent', icon: '👁️', description: 'Analyzing visual artifacts' },
+                { name: 'Provenance Verification Agent', icon: '📜', description: 'Verifying media authenticity' },
+                { name: 'Bias Auditor Agent', icon: '⚖️', description: 'Evaluating fairness' },
+                { name: 'Explainability Agent', icon: '🔍', description: 'Generating explanations' },
+                { name: 'Governance & Compliance Agent', icon: '🛡️', description: 'Ensuring RAI compliance' },
+                { name: 'Report Generation Agent', icon: '📊', description: 'Synthesizing findings' }
+            ];
+            
+            agentTimeline.innerHTML = agents.map((agent, index) => `
+                <div class="timeline-item" id="agent-${index}" style="animation-delay: ${index * 0.1}s">
+                    <div class="agent-name">
+                        <span>${agent.icon}</span>
+                        <span>${agent.name}</span>
+                        <span class="agent-status status-pending" id="status-${index}">Pending</span>
+                    </div>
+                    <div class="agent-details" id="details-${index}">${agent.description}</div>
+                    <div class="confidence-bar" style="display: none;" id="confidence-${index}">
+                        <div class="confidence-fill" style="width: 0%;"></div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Display analysis results
+        function displayResults(results) {
+            // Update agent timeline with actual logs
+            results.agentLogs.forEach((log, index) => {
+                const statusEl = document.getElementById(`status-${index}`);
+                const detailsEl = document.getElementById(`details-${index}`);
+                const confidenceEl = document.getElementById(`confidence-${index}`);
+                
+                if (statusEl) {
+                    statusEl.textContent = 'Complete';
+                    statusEl.className = 'agent-status status-complete';
+                }
+                
+                if (detailsEl) {
+                    detailsEl.textContent = `${log.action} (${log.executionTimeMs.toFixed(2)}ms)`;
+                }
+                
+                if (confidenceEl && log.confidence) {
+                    confidenceEl.style.display = 'block';
+                    const fill = confidenceEl.querySelector('.confidence-fill');
+                    fill.style.width = `${log.confidence * 100}%`;
+                }
+                
+                const timelineItem = document.getElementById(`agent-${index}`);
+                if (timelineItem) {
+                    timelineItem.classList.add('complete');
+                }
+            });
+            
+            // Show results section
+            resultsSection.classList.add('active');
+            
+            // Update verdict
+            updateVerdict(results);
+            
+            // Update metrics
+            updateMetrics(results);
+            
+            // Show alerts
+            showResultAlerts(results);
+            
+            // Show explanations
+            showExplanations(results);
+        }
+
+        // Update verdict display
+        function updateVerdict(results) {
+            const verdictIcon = document.getElementById('verdictIcon');
+            const verdictText = document.getElementById('verdictText');
+            const confidenceScore = document.getElementById('confidenceScore');
+            const verdictCard = document.getElementById('verdictCard');
+            
+            const verdict = results.finalVerdict;
+            const confidence = (results.overallConfidence * 100).toFixed(1);
+            
+            confidenceScore.textContent = `${confidence}%`;
+            
+            const verdictConfig = {
+                'authentic': { icon: '✅', text: 'AUTHENTIC', class: 'verdict-authentic' },
+                'deepfake': { icon: '⚠️', text: 'DEEPFAKE DETECTED', class: 'verdict-deepfake' },
+                'suspicious': { icon: '🔍', text: 'SUSPICIOUS', class: 'verdict-suspicious' },
+                'requires_human_review': { icon: '👤', text: 'HUMAN REVIEW REQUIRED', class: 'verdict-review' }
+            };
+            
+            const config = verdictConfig[verdict] || verdictConfig['suspicious'];
+            
+            verdictIcon.textContent = config.icon;
+            verdictText.textContent = config.text;
+            verdictText.className = `verdict-text ${config.class}`;
+        }
+
+        // Update metrics grid
+        function updateMetrics(results) {
+            const metricsGrid = document.getElementById('metricsGrid');
+            
+            const metrics = [
+                { label: 'Total Agents', value: results.agentLogs.length, icon: '🤖' },
+                { label: 'Processing Time', value: `${results.processingTimeMs.toFixed(0)}ms`, icon: '⏱️' },
+                { label: 'Fairness Flags', value: results.fairnessFlags.length, icon: '⚖️' },
+                { label: 'Governance Alerts', value: results.governanceAlerts.length, icon: '🛡️' }
+            ];
+            
+            metricsGrid.innerHTML = metrics.map(metric => `
+                <div class="metric-card">
+                    <div class="metric-label">${metric.icon} ${metric.label}</div>
+                    <div class="metric-value">${metric.value}</div>
+                </div>
+            `).join('');
+        }
+
+        // Show result alerts
+        function showResultAlerts(results) {
+            const alertsSection = document.getElementById('alertsSection');
+            let alerts = [];
+            
+            if (results.humanReviewRequired) {
+                alerts.push({
+                    type: 'warning',
+                    message: `⚠️ Human Review Required: ${results.humanReviewReason}`
+                });
+            }
+            
+            results.fairnessFlags.forEach(flag => {
+                alerts.push({
+                    type: 'warning',
+                    message: `⚖️ Fairness Alert: ${flag}`
+                });
+            });
+            
+            results.governanceAlerts.forEach(alert => {
+                alerts.push({
+                    type: alert.severity === 'high' ? 'danger' : 'info',
+                    message: `🛡️ ${alert.principle}: ${alert.description}`
+                });
+            });
+            
+            if (alerts.length === 0) {
+                alerts.push({
+                    type: 'success',
+                    message: '✅ All RAI compliance checks passed'
+                });
+            }
+            
+            alertsSection.innerHTML = alerts.map(alert => `
+                <div class="alert alert-${alert.type}">
+                    <div>${alert.message}</div>
+                </div>
+            `).join('');
+        }
+
+        // Show explanations
+        function showExplanations(results) {
+            const explanationSection = document.getElementById('explanationSection');
+            
+            if (!results.explanations || results.explanations.length === 0) {
+                explanationSection.innerHTML = '';
+                return;
+            }
+            
+            explanationSection.innerHTML = `
+                <h3 style="margin-bottom: 1.5rem;">🔍 Explainability Insights</h3>
+                ${results.explanations.map(exp => `
+                    <div class="explanation-card">
+                        <div class="explanation-method">${exp.method.toUpperCase()}</div>
+                        <p style="margin: 1rem 0; color: var(--text-secondary);">
+                            ${exp.natural_language_explanation}
+                        </p>
+                        
+                        <div class="feature-importance">
+                            <strong>Feature Importance:</strong>
+                            ${Object.entries(exp.feature_importance).map(([feature, importance]) => `
+                                <div class="feature-item">
+                                    <span>${feature.replace(/_/g, ' ')}</span>
+                                    <div class="feature-bar">
+                                        <div class="feature-bar-fill" style="width: ${importance * 100}%"></div>
+                                    </div>
+                                    <span>${(importance * 100).toFixed(0)}%</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `).join('')}
+            `;
+        }
+
+        // Show alert helper
+        function showAlert(type, message) {
+            const alertsSection = document.getElementById('alertsSection');
+            if (!alertsSection) return;
+            
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.innerHTML = `<div>${message}</div>`;
+            
+            alertsSection.appendChild(alert);
+            
+            setTimeout(() => alert.remove(), 5000);
+        }
+    </script>
+</body>
+</html>
